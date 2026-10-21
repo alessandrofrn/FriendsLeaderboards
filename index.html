@@ -1,0 +1,1125 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<title>FriendsLeaderboards</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#000000">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap">
+<style>
+/* Layout: app a una colonna (max 560px) su nero pieno. Home = elenco leaderboard; dentro una leaderboard, barra schede fissa in basso. Oro/argento/bronzo solo per il podio. */
+:root {
+  --bg: #000000;
+  --surface: #0e0e10;
+  --raised: #16161a;
+  --sunken: #1d1d22;
+  --ink: #f3f3f5;
+  --muted: #8b8b95;
+  --line: #24242a;
+  --accent: #8fa3ff;
+  --accent-ink: #05060a;
+  --accent-soft: #1a2040;
+  --gold: #e6b43c;
+  --silver: #b7c0ca;
+  --bronze: #d88a57;
+  --medal-ink: #0b0b0d;
+  --danger: #ff6b61;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-num: "DM Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --nav-h: 64px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  -webkit-tap-highlight-color: transparent;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+
+.wrap {
+  max-width: 560px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px calc(var(--nav-h) + 32px + env(safe-area-inset-bottom, 0px));
+}
+
+header.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; margin-bottom: 24px; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand-mark { width: 34px; height: 34px; flex: none; }
+.brand h1 { font-family: var(--font-display); font-weight: 800; font-size: 21px; letter-spacing: -0.02em; margin: 0; line-height: 1.1; }
+.status { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.status.shared .dot { background: #3ccf7a; }
+
+.board-head { display: flex; flex-direction: column; gap: 6px; margin-bottom: 24px; }
+.back {
+  align-self: flex-start; font: inherit; font-size: 14px; font-weight: 600; color: var(--muted);
+  background: none; border: 0; padding: 6px 8px 6px 0; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
+}
+.back svg { width: 18px; height: 18px; }
+.board-title { font-family: var(--font-display); font-weight: 800; font-size: 30px; letter-spacing: -0.025em; line-height: 1.05; margin: 0; text-wrap: balance; overflow-wrap: anywhere; }
+
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+section.view { display: flex; flex-direction: column; gap: 28px; }
+.block { display: flex; flex-direction: column; }
+
+/* Home: elenco leaderboard */
+.boards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.board-card {
+  width: 100%; text-align: left; font: inherit; color: var(--ink); cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px;
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px;
+}
+.board-card:hover { background: var(--raised); }
+.board-card .t { font-family: var(--font-display); font-weight: 600; font-size: 19px; letter-spacing: -0.01em; overflow-wrap: anywhere; min-width: 0; }
+.board-card .d { display: block; font-size: 12px; color: var(--muted); margin-top: 3px; font-family: var(--font-body); font-weight: 400; letter-spacing: 0; }
+.board-card svg { width: 20px; height: 20px; color: var(--muted); }
+.board-li { display: flex; gap: 8px; align-items: stretch; }
+.board-li .board-card { flex: 1; min-width: 0; }
+.icon-btn {
+  flex: none; width: 52px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface);
+  color: var(--muted); display: grid; place-items: center; cursor: pointer;
+}
+.icon-btn:hover { color: var(--danger); border-color: var(--danger); }
+.icon-btn svg { width: 20px; height: 20px; }
+.new-btn { width: 100%; padding: 14px 16px; font-size: 16px; border-radius: 14px; }
+
+/* Crea */
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.tag {
+  display: inline-flex; align-items: center; gap: 2px; padding: 4px 4px 4px 12px; border-radius: 999px;
+  background: var(--raised); border: 1px solid var(--line); font-size: 14px; font-weight: 500; max-width: 100%;
+}
+.tag span { overflow-wrap: anywhere; }
+.tag button { font: inherit; font-size: 16px; line-height: 1; background: none; border: 0; color: var(--muted); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; }
+.tag button:hover { color: var(--ink); background: var(--sunken); }
+.group { display: flex; flex-direction: column; gap: 28px; }
+.owners { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.owner-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.owner-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.owner-head strong { font-weight: 700; font-size: 16px; overflow-wrap: anywhere; min-width: 0; }
+.owner-card .tags { margin-top: 0; }
+.owner-card .tags:empty { display: none; }
+form.add.mini input { padding: 8px 10px; font-size: 14px; }
+form.add.mini .btn { padding: 8px 12px; font-size: 14px; }
+.linkish { font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); background: none; border: 0; padding: 6px 8px; border-radius: 8px; cursor: pointer; }
+.linkish:hover { color: var(--danger); }
+.check { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); cursor: pointer; font-weight: 600; }
+.check input { accent-color: var(--accent); width: 18px; height: 18px; margin: 2px 0 0; flex: none; }
+.check small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.check:has(input:checked) { border-color: var(--accent); }
+form.add.has-owner { flex-wrap: wrap; }
+form.add select { flex: 1 1 100%; font: inherit; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.muted { color: var(--muted); font-weight: 400; }
+.chip small { font-weight: 400; opacity: 0.75; }
+
+/* Navigazione tra prodotti in Vota */
+.vote-top { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
+.vote-top .saved { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+.vote-top .saved::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #3ccf7a; }
+.chip .count.done { color: #3ccf7a; font-size: 13px; }
+.chip[aria-pressed="true"] .count.done { color: inherit; }
+.vote-nav { display: flex; gap: 8px; margin-top: 4px; }
+.vote-nav .btn { flex: 1 1 0; min-width: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.25; }
+.vote-nav .btn.ghost { flex: 0 1 auto; }
+
+/* Spoiler sulle classifiche */
+.block-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.block-head h2 { margin: 0; }
+.spoiler { position: relative; border-radius: 14px; }
+.spoiler.covered { min-height: 150px; overflow: hidden; }
+.spoiler.covered > .spoiler-content { filter: blur(6px); opacity: 0.7; pointer-events: none; user-select: none; }
+.spoiler-cover {
+  position: absolute; inset: 0; z-index: 2; width: 100%; cursor: pointer; font: inherit; color: var(--ink);
+  border: 1px dashed var(--line); border-radius: 14px; background: rgba(0, 0, 0, 0.15);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 16px;
+}
+.spoiler-cover .tagline {
+  font-family: var(--font-display); font-weight: 800; font-size: 22px; letter-spacing: 0.18em;
+  padding: 8px 18px 8px 22px; border-radius: 999px; background: var(--ink); color: var(--bg);
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.spoiler-cover .tagline svg { width: 22px; height: 22px; }
+.spoiler-cover .sub { font-size: 13px; color: var(--muted); }
+.spoiler-cover:hover .tagline { background: var(--accent); color: var(--accent-ink); }
+@media (prefers-reduced-motion: no-preference) {
+  .spoiler-content { transition: filter 0.35s ease, opacity 0.35s ease; }
+}
+
+/* Finestra di conferma */
+.modal {
+  position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.72);
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: 16px max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.sheet {
+  width: 100%; max-width: 440px; background: var(--raised); border: 1px solid var(--line); border-radius: 18px;
+  padding: 20px; display: flex; flex-direction: column; gap: 10px;
+}
+.sheet strong { font-family: var(--font-display); font-size: 20px; font-weight: 600; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.sheet p { margin: 0 0 8px; color: var(--muted); }
+.sheet .btn-row { justify-content: flex-end; }
+.btn.solid-danger { background: var(--danger); border-color: var(--danger); color: var(--medal-ink); }
+@media (min-width: 600px) { .modal { align-items: center; } }
+
+/* Classifica */
+.board { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.row {
+  display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 12px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+}
+.row .rank {
+  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  font-family: var(--font-num); font-size: 14px; color: var(--muted); background: var(--sunken);
+}
+.row[data-medal="1"] .rank { background: var(--gold); color: var(--medal-ink); }
+.row[data-medal="2"] .rank { background: var(--silver); color: var(--medal-ink); }
+.row[data-medal="3"] .rank { background: var(--bronze); color: var(--medal-ink); }
+.row .info { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.row .name { font-weight: 600; overflow-wrap: anywhere; }
+.row .meta { font-size: 12px; color: var(--muted); }
+.bar { height: 5px; border-radius: 3px; background: var(--sunken); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.row[data-medal="1"] .bar > i { background: var(--gold); }
+.row .score { font-family: var(--font-num); font-size: 22px; text-align: right; font-variant-numeric: tabular-nums; }
+.row .score small { display: block; font-size: 11px; color: var(--muted); font-family: var(--font-body); }
+.row.first { padding: 18px 16px; border-color: var(--gold); background: linear-gradient(180deg, rgba(230, 180, 60, 0.10), var(--surface) 70%); }
+.row.first .name { font-family: var(--font-display); font-weight: 800; font-size: 20px; letter-spacing: -0.01em; }
+.row.first .score { font-size: 30px; color: var(--gold); }
+.row.first .crown { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+.row.novotes { opacity: 0.6; }
+
+.matrix-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table.matrix { border-collapse: collapse; width: 100%; font-size: 13px; }
+.matrix th, .matrix td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: center; white-space: nowrap; }
+.matrix tr:last-child td { border-bottom: 0; }
+.matrix th { font-weight: 600; color: var(--muted); font-size: 12px; }
+.matrix th:first-child, .matrix td:first-child { text-align: left; position: sticky; left: 0; background: var(--surface); }
+.matrix td.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.matrix td.empty { color: var(--line); }
+
+/* Vota */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  font: inherit; font-weight: 600; font-size: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  padding: 8px 14px; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+}
+.chip .count { font-family: var(--font-num); font-size: 11px; color: var(--muted); }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.chip[aria-pressed="true"] .count { color: inherit; opacity: 0.75; }
+.ballot { display: flex; flex-direction: column; gap: 10px; }
+.item { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.item-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.item-head .name { font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+.item-head .current { font-family: var(--font-num); font-size: 13px; color: var(--muted); white-space: nowrap; }
+.item-head .current b { color: var(--accent); font-weight: 500; font-size: 18px; }
+.scale { display: grid; grid-template-columns: repeat(var(--n, 10), 1fr); gap: 4px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.seg label {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); font-weight: 600;
+}
+.seg label small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
+.seg input { accent-color: var(--accent); width: 18px; height: 18px; margin: 0; flex: none; }
+.seg label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.scale button {
+  font: 500 14px var(--font-num); height: 38px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--sunken); color: var(--ink); cursor: pointer; padding: 0;
+}
+.scale button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+@media (max-width: 380px) { .scale.n10 { grid-template-columns: repeat(5, 1fr); } }
+
+/* Moduli e liste */
+form.add { display: flex; gap: 8px; }
+form.add input, .field {
+  flex: 1; min-width: 0; font: inherit; padding: 11px 12px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+}
+.field { width: 100%; font-size: 17px; font-weight: 600; padding: 13px 14px; }
+form.add input::placeholder, .field::placeholder { color: var(--muted); opacity: 0.8; }
+.btn {
+  font: inherit; font-weight: 600; padding: 11px 16px; border-radius: 10px; border: 1px solid var(--accent);
+  background: var(--accent); color: var(--accent-ink); cursor: pointer; white-space: nowrap;
+}
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn.danger { background: transparent; color: var(--danger); border-color: var(--line); }
+.btn.danger.armed { background: var(--danger); color: var(--medal-ink); border-color: var(--danger); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+ul.list { list-style: none; margin: 10px 0 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+ul.list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--line); }
+ul.list li:last-child { border-bottom: 0; }
+ul.list li span { min-width: 0; overflow-wrap: anywhere; }
+ul.list .del { font: inherit; font-size: 13px; font-weight: 600; background: none; border: 0; color: var(--muted); padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+ul.list .del.armed { background: var(--danger); color: var(--medal-ink); }
+.hint { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+
+.empty {
+  background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; padding: 22px 18px;
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-start;
+}
+.empty strong { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+.empty p { margin: 0; color: var(--muted); max-width: 42ch; }
+.empty .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+/* Barra schede */
+nav.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  background: var(--surface); border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+nav.tabs .inner { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); height: var(--nav-h); }
+nav.tabs button {
+  font: inherit; font-size: 12px; font-weight: 600; background: none; border: 0; color: var(--muted);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer;
+}
+nav.tabs svg { width: 22px; height: 22px; }
+nav.tabs button[aria-selected="true"] { color: var(--accent); }
+nav.tabs button[aria-selected="true"] .pill { background: var(--accent-soft); }
+nav.tabs .pill { padding: 3px 16px; border-radius: 999px; display: grid; place-items: center; }
+
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(var(--nav-h) + 16px + env(safe-area-inset-bottom, 0px)); z-index: 30;
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; font-weight: 500;
+  max-width: calc(100% - 32px);
+}
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) {
+  .bar > i { transition: width 0.4s ease; }
+  .chip, .scale button, .btn, .board-card { transition: background-color 0.15s, color 0.15s; }
+}
+</style>
+
+<div class="wrap">
+  <!-- HOME -->
+  <div id="home">
+    <header class="top">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 34 34" aria-hidden="true">
+          <rect width="34" height="34" rx="9" fill="var(--raised)"></rect>
+          <rect x="6" y="17" width="7" height="11" rx="1.5" fill="var(--silver)"></rect>
+          <rect x="13.5" y="9" width="7" height="19" rx="1.5" fill="var(--gold)"></rect>
+          <rect x="21" y="20" width="7" height="8" rx="1.5" fill="var(--bronze)"></rect>
+        </svg>
+        <h1>FriendsLeaderboards</h1>
+      </div>
+      <div class="status" id="status"><span class="dot"></span><span id="statusText">Caricamento…</span></div>
+    </header>
+    <section class="view">
+      <button class="btn new-btn" type="button" data-action="newBoard">+ Nuova leaderboard</button>
+      <div class="block">
+        <h2>Le tue leaderboard</h2>
+        <div id="boardsList"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- CREA -->
+  <div id="create" hidden>
+    <div class="board-head">
+      <button class="back" type="button" data-action="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>Torna all'elenco
+      </button>
+      <h1 class="board-title">Nuova leaderboard</h1>
+    </div>
+    <section class="view">
+      <div class="block">
+        <h2>Titolo</h2>
+        <input class="field" id="newTitle" name="newTitle" placeholder="es. Migliore pizzeria" maxlength="60" autocomplete="off" aria-label="Titolo della leaderboard">
+      </div>
+      <div class="block">
+        <h2>Scala dei voti</h2>
+        <div class="seg" role="radiogroup" aria-label="Scala dei voti">
+          <label><input type="radio" name="scaleMax" id="scale5" value="5"><span>Da 1 a 5<small>Veloce, tipo stelline</small></span></label>
+          <label><input type="radio" name="scaleMax" id="scale10" value="10" checked><span>Da 1 a 10<small>Più sfumature</small></span></label>
+        </div>
+      </div>
+      <div class="block">
+        <h2>Tipo di gara</h2>
+        <div class="seg" role="radiogroup" aria-label="Tipo di gara">
+          <label><input type="radio" name="boardMode" id="modeFree" value="free" checked><span>Liberi<small>Persone e prodotti separati</small></span></label>
+          <label><input type="radio" name="boardMode" id="modeOwned" value="owned"><span>Ognuno i suoi<small>Ogni prodotto è di una persona</small></span></label>
+        </div>
+      </div>
+      <div class="group" id="draftFree">
+      <div class="block">
+        <h2>Persone</h2>
+        <form class="add" id="draftPerson" autocomplete="off">
+          <input id="draftPersonName" name="draftPersonName" placeholder="Nome, es. Giulia" maxlength="40" aria-label="Nome della persona">
+          <button class="btn ghost" type="submit">Aggiungi</button>
+        </form>
+        <div class="tags" id="draftPeople"></div>
+      </div>
+      <div class="block">
+        <h2>Prodotti</h2>
+        <form class="add" id="draftProduct" autocomplete="off">
+          <input id="draftProductName" name="draftProductName" placeholder="Prodotto, es. Pizza del Gallo" maxlength="60" aria-label="Nome del prodotto">
+          <button class="btn ghost" type="submit">Aggiungi</button>
+        </form>
+        <div class="tags" id="draftProducts"></div>
+      </div>
+      </div>
+      <div class="group" id="draftOwned" hidden>
+        <div class="block">
+          <h2>Persone e i loro prodotti</h2>
+          <form class="add" id="draftOwner" autocomplete="off">
+            <input id="draftOwnerName" name="draftOwnerName" placeholder="Nome, es. Giulia" maxlength="40" aria-label="Nome della persona">
+            <button class="btn ghost" type="submit">Aggiungi persona</button>
+          </form>
+          <div class="owners" id="draftOwners"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="newSelfVote"><span>Ognuno può votare anche i propri prodotti<small>Se non lo spunti, ognuno vota solo i prodotti degli altri.</small></span></label>
+      </div>
+      <p class="hint">Persone e prodotti puoi aggiungerli anche dopo, da Gestisci.</p>
+      <div class="btn-row">
+        <button class="btn" type="button" data-action="saveNew">Crea e torna all'elenco</button>
+        <button class="btn ghost" type="button" data-action="home">Annulla</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- DENTRO UNA LEADERBOARD -->
+  <div id="inside" hidden>
+    <div class="board-head">
+      <button class="back" type="button" data-action="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>Tutte le leaderboard
+      </button>
+      <h1 class="board-title" id="boardTitle"></h1>
+    </div>
+
+    <section class="view" id="view-classifica">
+      <div class="block" id="peopleRankBlock" hidden>
+        <div class="block-head"><h2>Chi vince</h2><button class="linkish" type="button" data-action="hideSpoiler" data-s="people" id="hide-people" hidden>Nascondi</button></div>
+        <div class="spoiler" id="sp-people">
+          <div class="spoiler-content" id="peopleRank"></div>
+          <button class="spoiler-cover" type="button" data-action="reveal" data-s="people" id="cover-people" hidden>
+            <span class="tagline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>SPOILER</span>
+            <span class="sub">Tocca per scoprire chi vince</span>
+          </button>
+        </div>
+      </div>
+      <div class="block">
+        <div class="block-head"><h2 id="prodRankTitle">Classifica</h2><button class="linkish" type="button" data-action="hideSpoiler" data-s="products" id="hide-products" hidden>Nascondi</button></div>
+        <div class="spoiler" id="sp-products">
+          <div class="spoiler-content" id="board"></div>
+          <button class="spoiler-cover" type="button" data-action="reveal" data-s="products" id="cover-products" hidden>
+            <span class="tagline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>SPOILER</span>
+            <span class="sub">Tocca per vedere la classifica dei prodotti</span>
+          </button>
+        </div>
+      </div>
+      <div class="block" id="matrixBlock" hidden>
+        <h2>Tabellone voti</h2>
+        <div class="matrix-wrap" id="matrix"></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-vota" hidden>
+      <div class="vote-top">
+        <button class="btn ghost" type="button" data-action="home">‹ Esci, finisco dopo</button>
+        <span class="saved">Ogni voto si salva subito</span>
+      </div>
+      <div class="block">
+        <h2>Quale prodotto?</h2>
+        <div class="chips" id="voters"></div>
+      </div>
+      <div class="block">
+        <h2 id="ballotTitle">Voti da 1 a 10</h2>
+        <div class="ballot" id="ballot"></div>
+        <p class="hint">Tocca un numero per votare, toccalo di nuovo per togliere il voto.</p>
+      </div>
+    </section>
+
+    <section class="view" id="view-gestisci" hidden>
+      <div class="block">
+        <h2>Persone</h2>
+        <form class="add" id="addPerson" autocomplete="off">
+          <input id="personName" name="personName" placeholder="Nome, es. Giulia" maxlength="40" aria-label="Nome della persona">
+          <button class="btn" type="submit">Aggiungi</button>
+        </form>
+        <ul class="list" id="peopleList" hidden></ul>
+      </div>
+      <div class="block">
+        <h2>Prodotti</h2>
+        <form class="add" id="addProduct" autocomplete="off">
+          <select id="productOwner" name="productOwner" aria-label="Di chi è il prodotto" hidden></select>
+          <input id="productName" name="productName" placeholder="Prodotto, es. Pizza del Gallo" maxlength="60" aria-label="Nome del prodotto">
+          <button class="btn" type="submit">Aggiungi</button>
+        </form>
+        <ul class="list" id="productList" hidden></ul>
+      </div>
+      <div class="block" id="selfVoteBlock" hidden>
+        <h2>Regole</h2>
+        <label class="check"><input type="checkbox" id="selfVoteToggle"><span>Ognuno può votare anche i propri prodotti<small>Se la togli, i voti dati ai propri prodotti non contano.</small></span></label>
+      </div>
+      <div class="block">
+        <h2>Titolo</h2>
+        <form class="add" id="renameBoard" autocomplete="off">
+          <input id="boardTitleInput" name="boardTitleInput" maxlength="60" aria-label="Titolo della leaderboard">
+          <button class="btn ghost" type="submit">Rinomina</button>
+        </form>
+      </div>
+      <div class="block">
+        <h2>Leaderboard</h2>
+        <div class="btn-row">
+          <button class="btn ghost" type="button" data-action="seedHere">Riempi con esempio</button>
+          <button class="btn danger" type="button" data-action="deleteBoard">Elimina leaderboard</button>
+        </div>
+        <p class="hint" id="storageHint"></p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<nav class="tabs" aria-label="Sezioni" id="tabs" hidden>
+  <div class="inner" role="tablist">
+    <button role="tab" data-tab="classifica" aria-selected="true">
+      <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7 20v-6M12 20V6M17 20v-9"/></svg></span>Classifica
+    </button>
+    <button role="tab" data-tab="vota" aria-selected="false">
+      <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.7 5.5 6 .9-4.4 4.2 1 6L12 16.8 6.6 19.6l1-6L3.3 9.4l6-.9z"/></svg></span>Vota
+    </button>
+    <button role="tab" data-tab="gestisci" aria-selected="false">
+      <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1"/><circle cx="9" cy="7" r="3.5"/><path d="M19 8v6M22 11h-6"/></svg></span>Gestisci
+    </button>
+  </div>
+</nav>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
+  <div class="sheet">
+    <strong id="modalTitle"></strong>
+    <p id="modalText"></p>
+    <div class="btn-row">
+      <button class="btn ghost" type="button" data-modal="cancel">Annulla</button>
+      <button class="btn solid-danger" type="button" data-modal="ok" id="modalOk">Elimina</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const COLLS = ["people", "products", "votes"];
+  const LS_KEY = "friendsleaderboards:v2";
+  const state = {
+    boards: {}, boardsLoaded: false, mode: "loading", readOnly: false,
+    boardId: null, people: {}, products: {}, votes: {}, loaded: false, voteProduct: null, tab: "classifica",
+    creating: null, revealed: { people: false, products: false },
+  };
+
+  // Lo spoiler copre la classifica finché non lo tocchi; ogni volta che entri in una leaderboard torna coperto.
+  function applySpoiler(key, active) {
+    const covered = active && !state.revealed[key];
+    $("sp-" + key).classList.toggle("covered", covered);
+    $("cover-" + key).hidden = !covered;
+    $("hide-" + key).hidden = !(active && state.revealed[key]);
+    const content = $("sp-" + key).querySelector(".spoiler-content");
+    if (covered) content.setAttribute("aria-hidden", "true"); else content.removeAttribute("aria-hidden");
+  }
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const newId = () => Math.random().toString(36).slice(2, 8) + Date.now().toString(36);
+  const fmt = (n) => n.toLocaleString("it-IT", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const byName = (a, b) => a.name.localeCompare(b.name, "it", { sensitivity: "base" });
+  const list = (coll) => Object.entries(state[coll]).map(([id, d]) => ({ id, ...d }));
+  const voteId = (person, product) => person + "__" + product;
+  const P = (coll, bid = state.boardId) => `boards/${bid}/${coll}`;
+  const clean = (s) => s.trim().replace(/\s+/g, " ");
+  const maxOf = (bid = state.boardId) => (state.boards[bid]?.max === 5 ? 5 : 10);
+  const boardOf = () => state.boards[state.boardId] || {};
+  const owned = () => boardOf().mode === "owned";
+  const ownerName = (prod) => state.people[prod?.owner]?.name || "";
+  // In una gara "ognuno i suoi" senza autovoto, il proprietario non vota il proprio prodotto.
+  const canVote = (personId, prod) => !owned() || !!boardOf().selfVote || !prod || prod.owner !== personId;
+  const sortedProducts = () => list("products")
+    .filter((p) => !owned() || state.people[p.owner])
+    .sort((a, b) => owned() ? (ownerName(a).localeCompare(ownerName(b), "it", { sensitivity: "base" }) || byName(a, b)) : byName(a, b));
+
+  /* ---------- Archivio: condiviso (db) oppure locale (localStorage) ---------- */
+  const store = {
+    db: null, local: {}, subs: [],
+    async init() {
+      const c = window.claude;
+      if (c && typeof c.use === "function") {
+        try { this.db = await c.use("db"); } catch (e) { this.db = null; }
+      }
+      if (this.db) {
+        state.mode = "shared";
+        this.db.collection("boards").onSnapshot((snap) => {
+          const next = {};
+          snap.docs.forEach((d) => { next[d.id] = d.data(); });
+          state.boards = next; state.boardsLoaded = true;
+          if (state.boardId && !next[state.boardId] && !snap.metadata.fromCache) goHome();
+          render();
+        }, () => toast("Connessione ai dati persa. Ricarica la pagina."));
+      } else {
+        state.mode = "local";
+        try { this.local = JSON.parse(localStorage.getItem(LS_KEY) || "{}") || {}; } catch (e) { this.local = {}; }
+        state.boardsLoaded = true;
+        this.sync();
+        render();
+      }
+    },
+    open(bid) {
+      this.close();
+      state.boardId = bid; state.loaded = false; state.voteProduct = null;
+      COLLS.forEach((c) => { state[c] = {}; });
+      if (this.db) {
+        const pending = new Set(COLLS);
+        COLLS.forEach((coll) => {
+          this.subs.push(this.db.collection(P(coll, bid)).onSnapshot((snap) => {
+            const next = {};
+            snap.docs.forEach((d) => { next[d.id] = d.data(); });
+            state[coll] = next;
+            pending.delete(coll);
+            if (!pending.size) state.loaded = true;
+            render();
+          }, () => toast("Connessione ai dati persa. Ricarica la pagina.")));
+        });
+      } else { this.sync(); state.loaded = true; }
+    },
+    close() {
+      this.subs.forEach((u) => u()); this.subs = [];
+      state.boardId = null; state.loaded = false;
+      COLLS.forEach((c) => { state[c] = {}; });
+    },
+    sync() {
+      state.boards = { ...(this.local.boards || {}) };
+      if (state.boardId) COLLS.forEach((c) => { state[c] = { ...(this.local[P(c)] || {}) }; });
+    },
+    saveLocal() {
+      try { localStorage.setItem(LS_KEY, JSON.stringify(this.local)); }
+      catch (e) { toast("Impossibile salvare su questo dispositivo."); }
+    },
+    async set(path, id, data) {
+      if (this.db) return guard(() => this.db.collection(path).doc(id).set(data));
+      this.local[path] = { ...(this.local[path] || {}), [id]: data };
+      this.sync(); this.saveLocal(); render(); return true;
+    },
+    async remove(path, id, quiet = false) {
+      if (this.db) return guard(() => this.db.collection(path).doc(id).delete(), quiet);
+      const next = { ...(this.local[path] || {}) }; delete next[id];
+      if (Object.keys(next).length) this.local[path] = next; else delete this.local[path];
+      this.sync(); this.saveLocal(); render(); return true;
+    },
+    async ids(path) {
+      if (this.db) { const s = await this.db.collection(path).get(); return s.docs.map((d) => d.id); }
+      return Object.keys(this.local[path] || {});
+    },
+  };
+
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  // Esegue una scrittura; se l'archivio chiede di rallentare, aspetta e riprova (fino a 5 volte).
+  async function guard(fn, quiet = false) {
+    if (state.readOnly) { if (!quiet) toast("Puoi solo guardare: chiedi a chi ha creato l'app di darti accesso come collaboratore."); return false; }
+    for (let attempt = 0; ; attempt++) {
+      try { await fn(); return true; }
+      catch (e) {
+        const code = e && e.code;
+        if ((code === "resource_exhausted" || code === "unavailable") && attempt < 5) {
+          await sleep(500 * 2 ** attempt + Math.random() * 250); continue;
+        }
+        if (quiet) return false;
+        if (code === "invalid_argument") { state.readOnly = true; render(); toast("Puoi solo guardare: chiedi a chi ha creato l'app di darti accesso come collaboratore."); }
+        else if (code === "quota_exceeded") toast("Spazio pieno: elimina qualche leaderboard e riprova.");
+        else toast("Salvataggio non riuscito. Riprova tra poco.");
+        return false;
+      }
+    }
+  }
+
+  /* ---------- Navigazione ---------- */
+  // Ogni schermata fuori dalla home aggiunge un passo alla cronologia, così il tasto indietro di Android torna all'elenco.
+  let pushed = false;
+  function pushNav() { if (pushed) return; try { history.pushState({ fl: 1 }, ""); pushed = true; } catch (e) { pushed = false; } }
+  function openBoard(bid, tab = "classifica") {
+    state.creating = null;
+    state.revealed = { people: false, products: false };
+    store.open(bid);
+    state.tab = tab;
+    pushNav(); render(); window.scrollTo(0, 0);
+  }
+  function openCreate() {
+    state.creating = { people: [], products: [], owners: [] };
+    $("modeFree").checked = true; $("newSelfVote").checked = false;
+    ["newTitle", "draftPersonName", "draftProductName"].forEach((id) => { $(id).value = ""; });
+    $("scale10").checked = true;
+    pushNav(); render(); window.scrollTo(0, 0);
+    $("newTitle").focus();
+  }
+  function showHome() {
+    state.creating = null;
+    if (state.boardId) store.close();
+    render(); window.scrollTo(0, 0);
+  }
+  function goHome() {
+    if (pushed) { pushed = false; try { history.back(); return; } catch (e) {} }
+    showHome();
+  }
+  window.addEventListener("popstate", () => { pushed = false; closeModal(false); if (state.boardId || state.creating) showHome(); });
+
+  /* ---------- Finestra di conferma ---------- */
+  let modalResolve = null;
+  function askConfirm(title, text, okLabel = "Elimina") {
+    closeModal(false);
+    $("modalTitle").textContent = title; $("modalText").textContent = text; $("modalOk").textContent = okLabel;
+    $("modal").hidden = false; $("modalOk").focus();
+    return new Promise((res) => { modalResolve = res; });
+  }
+  function closeModal(result) {
+    $("modal").hidden = true;
+    if (modalResolve) { const r = modalResolve; modalResolve = null; r(result); }
+  }
+  $("modal").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-modal]");
+    if (b) closeModal(b.dataset.modal === "ok");
+    else if (e.target === $("modal")) closeModal(false);
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("modal").hidden) closeModal(false); });
+
+  function setTab(t) { state.tab = t; renderShell(); window.scrollTo(0, 0); }
+
+  /* ---------- Calcolo classifica ---------- */
+  function standings() {
+    const people = list("people");
+    const votes = list("votes").filter((v) => state.people[v.person] && state.products[v.product] && canVote(v.person, state.products[v.product]));
+    const rows = sortedProducts().map((p) => {
+      const vs = votes.filter((v) => v.product === p.id);
+      const sum = vs.reduce((s, v) => s + v.score, 0);
+      const eligible = people.filter((x) => canVote(x.id, p)).length;
+      return { ...p, count: vs.length, sum, eligible, avg: vs.length ? sum / vs.length : null };
+    });
+    rows.sort((a, b) => {
+      if (a.avg === null && b.avg === null) return byName(a, b);
+      if (a.avg === null) return 1;
+      if (b.avg === null) return -1;
+      return b.avg - a.avg || b.count - a.count || byName(a, b);
+    });
+    let rank = 0, prev = null;
+    rows.forEach((r, i) => {
+      if (r.avg === null) { r.rank = null; return; }
+      const key = r.avg.toFixed(4) + "|" + r.count;
+      if (key !== prev) { rank = i + 1; prev = key; }
+      r.rank = rank;
+    });
+    return rows;
+  }
+
+  /* ---------- Rendering ---------- */
+  function renderHome() {
+    const el = $("boardsList");
+    if (!state.boardsLoaded) { el.innerHTML = `<div class="empty"><p>Carico le leaderboard…</p></div>`; return; }
+    const boards = Object.entries(state.boards).map(([id, b]) => ({ id, ...b })).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    if (!boards.length) {
+      el.innerHTML = `<div class="empty"><strong>Nessuna leaderboard</strong>
+        <p>Premi "Nuova leaderboard" e dalle un titolo. Ogni leaderboard ha le sue persone, i suoi prodotti e la sua classifica.</p>
+        <div class="actions"><button class="btn ghost" data-action="seedNew">Crea un esempio</button></div></div>`;
+      return;
+    }
+    el.innerHTML = `<ul class="boards">` + boards.map((b) => {
+      const d = b.createdAt ? new Date(b.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" }) : "";
+      return `<li class="board-li"><button class="board-card" data-action="open" data-id="${b.id}">
+        <span class="t">${esc(b.title || "Senza titolo")}<span class="d">${b.mode === "owned" ? "Ognuno i suoi · " : ""}Voti da 1 a ${b.max === 5 ? 5 : 10}${d ? ` · creata il ${d}` : ""}</span></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button><button class="icon-btn" data-action="askDeleteBoard" data-id="${b.id}" aria-label="Elimina ${esc(b.title || "leaderboard")}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
+      </button></li>`;
+    }).join("") + `</ul>`;
+  }
+
+  function emptyBlock(title, text, withSeed) {
+    return `<div class="empty"><strong>${title}</strong><p>${text}</p>
+      <div class="actions"><button class="btn" data-action="goto" data-tab="gestisci">Aggiungi persone e prodotti</button>
+      ${withSeed ? '<button class="btn ghost" data-action="seedHere">Riempi con esempio</button>' : ""}</div></div>`;
+  }
+
+  function renderPeopleRank(rows) {
+    const max = maxOf();
+    const ppl = list("people").map((p) => {
+      const all = rows.filter((r) => r.owner === p.id);
+      const mine = all.filter((r) => r.avg !== null);
+      const avg = mine.length ? mine.reduce((s, r) => s + r.avg, 0) / mine.length : null;
+      return { ...p, avg, n: mine.length, total: all.length, best: mine[0] };
+    }).sort((a, b) => (a.avg === null) - (b.avg === null) || (b.avg ?? 0) - (a.avg ?? 0) || byName(a, b));
+    let rank = 0, prev = null;
+    $("peopleRank").innerHTML = `<ol class="board">` + ppl.map((p, i) => {
+      let rk = null;
+      if (p.avg !== null) { const k = p.avg.toFixed(4); if (k !== prev) { rank = i + 1; prev = k; } rk = rank; }
+      const first = rk === 1;
+      const meta = p.n ? `${p.n === 1 ? "1 prodotto votato" : p.n + " prodotti votati"} · il migliore: ${esc(p.best.name)}`
+        : (p.total ? "prodotti non ancora votati" : "nessun prodotto");
+      return `<li class="row${first ? " first" : ""}${p.avg === null ? " novotes" : ""}" data-medal="${rk && rk <= 3 ? rk : ""}">
+        <div class="rank">${rk ?? "–"}</div>
+        <div class="info">${first ? '<span class="crown">Vince</span>' : ""}
+          <span class="name">${esc(p.name)}</span>
+          <div class="bar"><i style="width:${p.avg ? (p.avg / max) * 100 : 0}%"></i></div>
+          <span class="meta">${meta}</span></div>
+        <div class="score">${p.avg === null ? "–" : fmt(p.avg)}<small>media</small></div>
+      </li>`;
+    }).join("") + `</ol>`;
+    $("peopleRankBlock").hidden = false;
+  }
+
+  function renderBoard() {
+    const people = list("people"), products = list("products");
+    $("peopleRankBlock").hidden = true;
+    $("prodRankTitle").textContent = owned() ? "Classifica prodotti" : "Classifica";
+    applySpoiler("people", false); applySpoiler("products", false);
+    if (!state.loaded) { $("board").innerHTML = `<div class="empty"><p>Carico i voti…</p></div>`; $("matrixBlock").hidden = true; return; }
+    if (!products.length || !people.length) {
+      $("board").innerHTML = emptyBlock("Ancora nessuna gara",
+        "Aggiungi chi vota e i prodotti da votare. Qui comparirà la classifica, ordinata per media dei voti.", true);
+      $("matrixBlock").hidden = true; return;
+    }
+    const rows = standings();
+    const anyVotes = rows.some((r) => r.count);
+    let html = "";
+    if (!anyVotes) html += `<div class="empty" style="margin-bottom:8px"><strong>Nessun voto ancora</strong><p>Vai su Vota, scegli una persona e dai un punteggio da 1 a ${maxOf()} a ogni prodotto.</p><div class="actions"><button class="btn" data-action="goto" data-tab="vota">Inizia a votare</button></div></div>`;
+    html += `<ol class="board">` + rows.map((r) => {
+      const medal = r.rank && r.rank <= 3 ? r.rank : "";
+      const first = r.rank === 1 && anyVotes;
+      const ownerTxt = owned() ? `di ${esc(ownerName(r))} · ` : "";
+      const meta = ownerTxt + (r.count ? `${r.count} ${r.count === 1 ? "voto" : "voti"} su ${r.eligible} · totale ${r.sum}` : "nessun voto");
+      return `<li class="row${first ? " first" : ""}${r.count ? "" : " novotes"}" data-medal="${medal}">
+        <div class="rank">${r.rank ?? "–"}</div>
+        <div class="info">
+          ${first ? '<span class="crown">In testa</span>' : ""}
+          <span class="name">${esc(r.name)}</span>
+          <div class="bar"><i style="width:${r.avg ? (r.avg / maxOf()) * 100 : 0}%"></i></div>
+          <span class="meta">${meta}</span>
+        </div>
+        <div class="score">${r.avg === null ? "–" : fmt(r.avg)}<small>media</small></div>
+      </li>`;
+    }).join("") + `</ol>`;
+    $("board").innerHTML = html;
+    applySpoiler("products", anyVotes);
+    if (owned() && anyVotes) { renderPeopleRank(rows); applySpoiler("people", true); }
+
+    if (anyVotes) {
+      const ps = people.sort(byName);
+      let t = `<table class="matrix"><thead><tr><th>Prodotto</th>${ps.map((p) => `<th>${esc(p.name)}</th>`).join("")}</tr></thead><tbody>`;
+      rows.forEach((r) => {
+        t += `<tr><td>${esc(r.name)}</td>` + ps.map((p) => {
+          if (!canVote(p.id, r)) return `<td class="empty" title="Suo prodotto">—</td>`;
+          const v = state.votes[voteId(p.id, r.id)];
+          return v ? `<td class="num">${v.score}</td>` : `<td class="empty">·</td>`;
+        }).join("") + `</tr>`;
+      });
+      $("matrix").innerHTML = t + `</tbody></table>`;
+      // Il tabellone svelerebbe i voti: si vede solo dopo aver scoperto la classifica prodotti.
+      $("matrixBlock").hidden = !state.revealed.products;
+    } else $("matrixBlock").hidden = true;
+  }
+
+  function renderCreate() {
+    const c = state.creating;
+    const tags = (arr, kind) => arr.map((n, i) => `<span class="tag"><span>${esc(n)}</span><button type="button" data-action="draftDel" data-kind="${kind}" data-i="${i}" aria-label="Togli ${esc(n)}">×</button></span>`).join("");
+    $("draftPeople").innerHTML = tags(c.people, "people");
+    $("draftProducts").innerHTML = tags(c.products, "products");
+    const isOwned = $("modeOwned").checked;
+    $("draftFree").hidden = isOwned; $("draftOwned").hidden = !isOwned;
+    $("draftOwners").innerHTML = c.owners.map((o, i) => `<div class="owner-card">
+      <div class="owner-head"><strong>${esc(o.name)}</strong><button type="button" class="linkish" data-action="draftOwnerDel" data-i="${i}">Togli</button></div>
+      <div class="tags">${o.products.map((n, j) => `<span class="tag"><span>${esc(n)}</span><button type="button" data-action="draftOwnedProdDel" data-i="${i}" data-j="${j}" aria-label="Togli ${esc(n)}">×</button></span>`).join("")}</div>
+      <form class="add mini" data-owner-form="${i}" autocomplete="off">
+        <input id="ownProd${i}" name="ownProd${i}" placeholder="Prodotto di ${esc(o.name)}" maxlength="60" aria-label="Prodotto di ${esc(o.name)}">
+        <button class="btn ghost" type="submit">Aggiungi</button>
+      </form></div>`).join("");
+  }
+
+  function renderVote() {
+    const people = list("people").sort(byName), products = sortedProducts();
+    if (state.voteProduct && !state.products[state.voteProduct]) state.voteProduct = null;
+    // Appena entri riparte dal primo prodotto a cui mancano ancora voti.
+    if (!state.voteProduct && products.length) {
+      const todo = products.find((pr) => people.some((p) => canVote(p.id, pr) && !state.votes[voteId(p.id, pr.id)]));
+      state.voteProduct = (todo || products[0]).id;
+    }
+    if (!state.loaded) { $("voters").innerHTML = ""; $("ballot").innerHTML = `<div class="empty"><p>Carico…</p></div>`; return; }
+    if (!people.length || !products.length) {
+      $("voters").innerHTML = "";
+      $("ballotTitle").textContent = `Voti da 1 a ${maxOf()}`;
+      $("ballot").innerHTML = emptyBlock("Serve almeno una persona e un prodotto", "Aggiungili nella sezione Gestisci, poi torna qui a votare.", false);
+      return;
+    }
+    const prodId = state.voteProduct;
+    $("voters").innerHTML = products.map((pr) => {
+      const elig = people.filter((p) => canVote(p.id, pr));
+      const n = elig.filter((p) => state.votes[voteId(p.id, pr.id)]).length;
+      const who = owned() ? ` <small>· ${esc(ownerName(pr))}</small>` : "";
+      return `<button class="chip" data-action="voteProduct" data-id="${pr.id}" aria-pressed="${pr.id === prodId}">${esc(pr.name)}${who}${elig.length && n === elig.length ? '<span class="count done" aria-label="completato">✓</span>' : `<span class="count">${n}/${elig.length}</span>`}</button>`;
+    }).join("");
+    const max = maxOf(), prod = state.products[prodId];
+    $("ballotTitle").textContent = `Voti per ${prod.name}${owned() ? ` di ${ownerName(prod)}` : ""}, da 1 a ${max}`;
+    const voters = people.filter((p) => canVote(p.id, prod));
+    let html = voters.length ? "" : `<div class="empty"><p>Nessuno può votare questo prodotto: serve almeno un'altra persona.</p></div>`;
+    if (voters.length < people.length && voters.length) html += `<p class="hint" style="margin:0">${esc(ownerName(prod))} non vota il suo prodotto.</p>`;
+    html += voters.map((p) => {
+      const v = state.votes[voteId(p.id, prodId)];
+      const btns = Array.from({ length: max }, (_, i) => i + 1).map((n) =>
+        `<button data-action="vote" data-person="${p.id}" data-score="${n}" aria-pressed="${!!v && v.score === n}" aria-label="${n}" ${state.readOnly ? "disabled" : ""}>${n}</button>`).join("");
+      return `<div class="item"><div class="item-head"><span class="name">${esc(p.name)}</span>
+        <span class="current">${v ? `<b>${v.score}</b>/${max}` : "da votare"}</span></div>
+        <div class="scale n${max}" style="--n:${max}" role="group" aria-label="Voto di ${esc(p.name)}">${btns}</div></div>`;
+    }).join("");
+    const idx = products.findIndex((pr) => pr.id === prodId);
+    const prevP = products[idx - 1], nextP = products[idx + 1];
+    html += `<div class="vote-nav">`
+      + (prevP ? `<button class="btn ghost" type="button" data-action="voteProduct" data-id="${prevP.id}" data-scroll="1" id="votePrev">‹ Indietro</button>` : "")
+      + (nextP ? `<button class="btn" type="button" data-action="voteProduct" data-id="${nextP.id}" data-scroll="1" id="voteNext">Avanti: ${esc(nextP.name)} ›</button>`
+               : `<button class="btn" type="button" data-action="goto" data-tab="classifica">Vai alla classifica ›</button>`)
+      + `</div>`;
+    $("ballot").innerHTML = html;
+  }
+
+  function renderManage() {
+    const fill = (el, items, coll) => {
+      el.hidden = !items.length;
+      el.innerHTML = items.map((it) => `<li><span>${esc(it.name)}${coll === "products" && owned() ? ` <small class="muted">· di ${esc(ownerName(it) || "?")}</small>` : ""}</span><button class="del" data-action="del" data-coll="${coll}" data-id="${it.id}">Elimina</button></li>`).join("");
+    };
+    fill($("peopleList"), list("people").sort(byName), "people");
+    fill($("productList"), sortedProducts(), "products");
+    const sel = $("productOwner"), isOwned = owned();
+    sel.hidden = !isOwned; $("addProduct").classList.toggle("has-owner", isOwned);
+    if (isOwned) {
+      const ppl = list("people").sort(byName), keep = sel.value;
+      sel.innerHTML = ppl.length ? ppl.map((p) => `<option value="${p.id}">Prodotto di ${esc(p.name)}</option>`).join("")
+        : `<option value="">Aggiungi prima una persona</option>`;
+      if (ppl.some((p) => p.id === keep)) sel.value = keep;
+    }
+    $("selfVoteBlock").hidden = !isOwned;
+    $("selfVoteToggle").checked = !!boardOf().selfVote;
+    const ti = $("boardTitleInput");
+    if (document.activeElement !== ti) ti.value = state.boards[state.boardId]?.title || "";
+    $("storageHint").textContent = state.mode === "shared"
+      ? "I dati sono condivisi: chi apre il link dell'app vede gli stessi voti in tempo reale."
+      : "I dati sono salvati solo su questo dispositivo, nel browser.";
+  }
+
+  function renderShell() {
+    const inside = !!state.boardId, creating = !inside && !!state.creating;
+    $("home").hidden = inside || creating; $("create").hidden = !creating;
+    $("inside").hidden = !inside; $("tabs").hidden = !inside;
+    if (inside) {
+      $("boardTitle").textContent = state.boards[state.boardId]?.title || "Senza titolo";
+      ["classifica", "vota", "gestisci"].forEach((t) => {
+        $("view-" + t).hidden = t !== state.tab;
+        document.querySelector(`nav.tabs [data-tab="${t}"]`).setAttribute("aria-selected", String(t === state.tab));
+      });
+    }
+    $("status").classList.toggle("shared", state.mode === "shared");
+    $("statusText").textContent = state.mode === "loading" ? "Caricamento…"
+      : state.mode === "shared" ? (state.readOnly ? "Solo lettura" : "Condiviso") : "Su questo telefono";
+  }
+
+  function render() {
+    renderShell();
+    if (state.boardId) { renderBoard(); renderVote(); renderManage(); }
+    else if (state.creating) renderCreate();
+    else renderHome();
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    const t = $("toast"); t.textContent = msg; t.hidden = false;
+    t.style.bottom = state.boardId ? "" : "calc(24px + env(safe-area-inset-bottom, 0px))";
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2800);
+  }
+
+  /* ---------- Azioni ---------- */
+  async function createBoard(title, max = 10, extra = {}) {
+    const id = newId();
+    if (!(await store.set("boards", id, { title, max, mode: "free", ...extra, createdAt: Date.now() }))) return null;
+    return id;
+  }
+
+  async function addNamed(coll, input) {
+    const name = clean(input.value);
+    if (!name) { input.focus(); return; }
+    const data = { name, createdAt: Date.now() };
+    let same = list(coll);
+    if (coll === "products" && owned()) {
+      data.owner = $("productOwner").value;
+      if (!state.people[data.owner]) { toast("Aggiungi prima una persona, poi i suoi prodotti."); return; }
+      same = same.filter((x) => x.owner === data.owner);
+    }
+    if (same.some((x) => x.name.toLowerCase() === name.toLowerCase())) { toast(`"${name}" c'è già.`); return; }
+    input.value = "";
+    if (await store.set(P(coll), newId(), data)) toast(`Aggiunto: ${name}`);
+  }
+
+  async function removeWithVotes(coll, id) {
+    // Togliendo una persona in una gara "ognuno i suoi" se ne vanno anche i suoi prodotti.
+    const prods = coll === "people" && owned() ? list("products").filter((p) => p.owner === id).map((p) => p.id) : [];
+    const related = list("votes").filter((v) => coll === "people"
+      ? v.person === id || prods.includes(v.product)
+      : v.product === id);
+    if (!(await store.remove(P(coll), id))) return;
+    for (const pid of prods) await store.remove(P("products"), pid, true);
+    for (const v of related) await store.remove(P("votes"), v.id, true);
+  }
+
+  async function seedInto(bid) {
+    const ppl = ["Marco", "Giulia", "Luca", "Sara"];
+    const prods = ["Pizza Margherita", "Carbonara", "Tiramisù", "Risotto alla milanese"];
+    const scores = [[8, 7, 9, 6], [9, 8, 7, 7], [7, 9, 10, 8], [8, 6, 9, 9]];
+    const pIds = [], qIds = [];
+    for (const n of ppl) { const id = newId(); if (!(await store.set(P("people", bid), id, { name: n, createdAt: Date.now() }))) return false; pIds.push(id); }
+    for (const n of prods) { const id = newId(); if (!(await store.set(P("products", bid), id, { name: n, createdAt: Date.now() }))) return false; qIds.push(id); }
+    for (let i = 0; i < pIds.length; i++) for (let j = 0; j < qIds.length; j++) {
+      if (i === 3 && j === 3) continue;
+      await store.set(P("votes", bid), voteId(pIds[i], qIds[j]), { person: pIds[i], product: qIds[j], score: scores[i][j] });
+    }
+    return true;
+  }
+
+  async function confirmDeleteBoard(bid) {
+    const title = state.boards[bid]?.title || "Senza titolo";
+    const ok = await askConfirm(`Eliminare "${title}"?`,
+      "Verranno cancellati anche persone, prodotti e voti di questa leaderboard. Non si può annullare.", "Elimina leaderboard");
+    if (ok) deleteBoard(bid);
+  }
+
+  async function deleteBoard(bid) {
+    const title = state.boards[bid]?.title || "Leaderboard";
+    if (state.boardId === bid) goHome();
+    // Prima sparisce dall'elenco, poi si puliscono con calma persone, prodotti e voti.
+    if (!(await store.remove("boards", bid))) return;
+    toast(`Eliminata: ${title}`);
+    for (const c of COLLS) {
+      let ids = [];
+      try { ids = await store.ids(P(c, bid)); } catch (e) { continue; }
+      for (const id of ids) {
+        await store.remove(P(c, bid), id, true);
+        if (store.db) await sleep(150);
+      }
+    }
+  }
+
+  async function saveNew() {
+    const input = $("newTitle"), title = clean(input.value), c = state.creating;
+    if (!title) { input.focus(); toast("Scrivi un titolo per la leaderboard."); return; }
+    const isOwned = $("modeOwned").checked;
+    const extra = isOwned ? { mode: "owned", selfVote: $("newSelfVote").checked } : { mode: "free" };
+    const bid = await createBoard(title, $("scale5").checked ? 5 : 10, extra);
+    if (!bid) return;
+    if (isOwned) {
+      for (const o of c.owners) {
+        const pid = newId();
+        if (!(await store.set(P("people", bid), pid, { name: o.name, createdAt: Date.now() }))) break;
+        for (const n of o.products) await store.set(P("products", bid), newId(), { name: n, owner: pid, createdAt: Date.now() });
+      }
+    } else {
+      for (const n of c.people) await store.set(P("people", bid), newId(), { name: n, createdAt: Date.now() });
+      for (const n of c.products) await store.set(P("products", bid), newId(), { name: n, createdAt: Date.now() });
+    }
+    goHome();
+    toast(`Creata: ${title}`);
+  }
+
+  function addDraft(kind, input) {
+    const name = clean(input.value), arr = state.creating[kind];
+    if (!name) { input.focus(); return; }
+    if (arr.some((x) => x.toLowerCase() === name.toLowerCase())) { toast(`"${name}" c'è già.`); return; }
+    arr.push(name); input.value = ""; input.focus(); renderCreate();
+  }
+
+  document.addEventListener("click", async (e) => {
+    const tabBtn = e.target.closest("nav.tabs [data-tab]");
+    if (tabBtn) { setTab(tabBtn.dataset.tab); return; }
+    const el = e.target.closest("[data-action]");
+    if (!el) return;
+    const a = el.dataset.action;
+    if (a === "open") openBoard(el.dataset.id);
+    else if (a === "home") goHome();
+    else if (a === "goto") setTab(el.dataset.tab);
+    else if (a === "reveal") { state.revealed[el.dataset.s] = true; renderBoard(); }
+    else if (a === "hideSpoiler") { state.revealed[el.dataset.s] = false; renderBoard(); }
+    else if (a === "newBoard") openCreate();
+    else if (a === "saveNew") saveNew();
+    else if (a === "draftDel") { state.creating[el.dataset.kind].splice(Number(el.dataset.i), 1); renderCreate(); }
+    else if (a === "draftOwnerDel") { state.creating.owners.splice(Number(el.dataset.i), 1); renderCreate(); }
+    else if (a === "draftOwnedProdDel") { state.creating.owners[Number(el.dataset.i)].products.splice(Number(el.dataset.j), 1); renderCreate(); }
+    else if (a === "askDeleteBoard") confirmDeleteBoard(el.dataset.id);
+    else if (a === "voteProduct") { state.voteProduct = el.dataset.id; renderVote(); if (el.dataset.scroll) window.scrollTo(0, 0); }
+    else if (a === "vote") {
+      const person = el.dataset.person, product = state.voteProduct, score = Number(el.dataset.score), id = voteId(person, product);
+      const cur = state.votes[id];
+      if (cur && cur.score === score) store.remove(P("votes"), id);
+      else store.set(P("votes"), id, { person, product, score });
+    }
+    else if (a === "del") {
+      const coll = el.dataset.coll, id = el.dataset.id, name = state[coll][id]?.name || "";
+      const ok = await askConfirm(`Eliminare "${name}"?`,
+        coll === "people"
+          ? (owned() ? "Verranno cancellati anche i suoi prodotti e tutti i voti collegati." : "Verranno cancellati anche tutti i suoi voti.")
+          : "Verranno cancellati anche tutti i voti per questo prodotto.");
+      if (ok) removeWithVotes(coll, id);
+    }
+    else if (a === "seedHere") {
+      const bid = state.boardId;
+      if (await seedInto(bid)) { toast("Esempio aggiunto."); if (state.boardId === bid) setTab("classifica"); }
+    }
+    else if (a === "seedNew") {
+      const bid = await createBoard("Cena di ottobre (esempio)");
+      if (bid && await seedInto(bid)) openBoard(bid);
+    }
+    else if (a === "deleteBoard") confirmDeleteBoard(state.boardId);
+  });
+
+  $("draftPerson").addEventListener("submit", (e) => { e.preventDefault(); addDraft("people", $("draftPersonName")); });
+  $("draftProduct").addEventListener("submit", (e) => { e.preventDefault(); addDraft("products", $("draftProductName")); });
+  $("draftOwner").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const input = $("draftOwnerName"), name = clean(input.value), owners = state.creating.owners;
+    if (!name) { input.focus(); return; }
+    if (owners.some((o) => o.name.toLowerCase() === name.toLowerCase())) { toast(`"${name}" c'è già.`); return; }
+    owners.push({ name, products: [] }); input.value = ""; renderCreate();
+    $("ownProd" + (owners.length - 1)).focus();
+  });
+  document.addEventListener("submit", (e) => {
+    const f = e.target.closest("[data-owner-form]");
+    if (!f) return;
+    e.preventDefault();
+    const i = Number(f.dataset.ownerForm), input = $("ownProd" + i), name = clean(input.value), o = state.creating.owners[i];
+    if (!name) { input.focus(); return; }
+    if (o.products.some((n) => n.toLowerCase() === name.toLowerCase())) { toast(`"${name}" c'è già.`); return; }
+    o.products.push(name); renderCreate(); $("ownProd" + i).focus();
+  });
+  ["modeFree", "modeOwned"].forEach((id) => $(id).addEventListener("change", renderCreate));
+  $("selfVoteToggle").addEventListener("change", async (e) => {
+    const bid = state.boardId, v = e.target.checked;
+    if (await store.set("boards", bid, { ...state.boards[bid], selfVote: v })) toast(v ? "Ora si possono votare anche i propri prodotti." : "Ora ognuno vota solo i prodotti degli altri.");
+  });
+  $("newTitle").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("draftPersonName").focus(); } });
+  $("renameBoard").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = $("boardTitleInput"), title = clean(input.value), bid = state.boardId;
+    if (!title) { input.focus(); toast("Il titolo non può essere vuoto."); return; }
+    input.blur();
+    if (await store.set("boards", bid, { ...state.boards[bid], title })) toast("Titolo aggiornato.");
+  });
+  $("addPerson").addEventListener("submit", (e) => { e.preventDefault(); addNamed("people", $("personName")); });
+  $("addProduct").addEventListener("submit", (e) => { e.preventDefault(); addNamed("products", $("productName")); });
+
+  render();
+  store.init();
+
+  // Uso offline quando l'app è ospitata come sito (non dentro Claude)
+  if (!window.claude && "serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  }
+})();
+</script>
+
+</body></html>
